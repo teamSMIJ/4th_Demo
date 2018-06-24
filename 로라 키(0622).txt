@@ -1,0 +1,26 @@
+아이디: kkupalro
+
+App EUI: 9999991000000456
+
+App Key : 65406c8d8fc5400ab6d4e79e2a8ba1b4
+
+1. 사용자 인증키(uKey) : cEdkZTdtWlRFM2ZMT24xWFVIQ0F2TkRjeFE0VFYyMjdGTXpMcG5aSWVLQUZGNWlzYi9DY01oakVpamRISWNNaQ==
+
+2 AppEui : 0000000000000004
+  DevEui: 702C1FFFFE1D15C4
+
+3.LTID(CSE-ID) : 00000004702c1ffffe1d15c4
+
+
+https://onem2m.sktiot.com:9443/0000000000000004/v1_0/remoteCSE-00000004d02544fffef03b47/container-LoRa/latest
+
+
+04.contentInstanc 클릭 -> GET <lastest> RETRIEVE 클릭 -> Headers클릭 -> 아래 내용 입력
+Accept : application/xml
+X-M2M-RI: 1234
+X-M2M-Origin: Origin
+uKey: cEdkZTdtWlRFM2ZMT24xWFVIQ0F2TkRjeFE0VFYyMjdGTXpMcG5aSWVLQUZGNWlzYi9DY01oakVpamRISWNNaQ==
+
+-> 위쪽 GET버튼옆에 아래텍스트 입력
+http://thingplugtest.sktiot.com:9000/0000000000000004/v1_0/remoteCSE-00000004702c1ffffe1d15c4/container-LoRa/latest
+-> 입력후 SEND

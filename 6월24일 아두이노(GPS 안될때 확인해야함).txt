@@ -1,0 +1,137 @@
+#include <SoftwareSerial.h>
+#include <TinyGPS.h>
+
+SoftwareSerial BTSerial(4, 5);  // 블루투스 통신
+SoftwareSerial Lora(2,3); // RT =3, TX =2
+#define RXPIN 7
+#define TXPIN 8
+#define GPSBAUD 9600
+
+TinyGPS gps; 
+SoftwareSerial uart_gps(RXPIN, TXPIN);  // 실제 RX =7, TX=8
+
+void getgps(TinyGPS & gps);
+//long TP_init();
+
+int REC = 9; // 녹음핀 9번
+int PLAYE = 10; // 재생핀 10번
+int vibr_Pin=11; // 진동핀 11번
+
+int state = -1; // 모드 상태변수
+int bstate=0; // 블루투스 상태변수
+
+char data; // 블루투스 데이터
+int m = 0; // 진동값 변수
+float latitude, longitude; // 위도, 경도 등을 저장할 변수 선언
+void setup() {
+  Serial.begin(9600);
+  BTSerial.begin(9600);
+  uart_gps.begin(GPSBAUD);
+  Lora.begin(115200);
+  pinMode(vibr_Pin, INPUT); // 진동핀 입력으로 놓음
+  pinMode(REC, OUTPUT); // 녹음핀 출력으로
+  pinMode(PLAYE, OUTPUT); // 재생핀 출력으로
+  
+  Serial.println("*********command*********");  // [1. 녹음10초] [2. 재생] [3. 정지] [4. gps] [5. vibration]
+  Serial.println("[1. record]");
+  Serial.println("[2. play]");
+  Serial.println("[3. stop]");
+  Serial.println("[4. gps] ");
+  Serial.println("[5. vibration]");
+}
+
+void loop() {
+    if(BTSerial.available())
+    {
+      data =BTSerial.read(); 
+    }
+    if(BTSerial.available())
+    {
+    if (data == '1') {  // 녹음
+      state = 3;
+      bstate=0;
+      digitalWrite(REC,HIGH);
+      Serial.println("REC...");
+    } 
+    
+    else if (data == '2') {  // 재생
+      state = 4;
+      bstate=0; 
+      digitalWrite(PLAYE,HIGH);
+      Serial.println("PLAYE...");
+    } 
+    
+    else if(data == '3') { // 정지
+      state = 0;
+      bstate=0; 
+      digitalWrite(REC,LOW);
+      digitalWrite(PLAYE,LOW);
+      Serial.println("STOP...");
+      BTSerial.println("STOP...");
+    }
+    
+    else if(data == '4') { // GPS
+      state =1;
+      bstate=1;
+    }
+ 
+    else if(data == '5') { // 진동수
+     vib();
+     bstate=0;
+     Serial.println("vib."+String(m));
+     // Lora.print("LRW 31 "+String(m)+" cnf 1 CR LF");
+     BTSerial.print("\nvib."+String(m));
+     
+     }
+     }
+     if(bstate!=0 ){
+      uart_gps.listen();
+      loop2();
+      }
+      else {
+        BTSerial.listen();
+        long measurement = TP_init();
+        if(m%4==1)
+        {
+          Lora.println("LRW 31 "+String(latitude,6)+";"+String(longitude,6)+" cnf 1 CR LF");
+          }
+         }
+}
+
+void loop2() {
+  while(uart_gps.available())  
+  {
+      int c = uart_gps.read();   // 데이터를 읽음
+      if(gps.encode(c))   
+      {                      // 데이터가 타당한 값이면
+        getgps(gps);         // GPS 데이터를 잡아옴
+      }
+      else // 데이터가 타당하지않은 값이면
+      {
+        state = 0; // stop 상태로된후 다시 loop 로 리턴함
+        bstate = 0;
+        loop();
+      }
+  } 
+  
+}
+void vib() {
+  state = 2;
+}
+
+long TP_init(){
+  long measurement=pulseIn (vibr_Pin, HIGH);
+  if(measurement>100)
+  m++;
+  return m;
+}
+
+void getgps(TinyGPS & gps)
+{
+  gps.f_get_position(&latitude, &longitude); // 위도, 경도를 파싱하여 변수에 저장
+  Serial.println(String(latitude,6)+";"+String(longitude,6)); 
+  Lora.println("LRW 31 "+String(latitude,6)+";"+String(longitude,6)+" cnf 1 CR LF"); 
+  BTSerial.print("\n"+String(latitude,6)+";"+String(longitude,6)); 
+  BTSerial.listen();  
+  delay(5000);
+}
